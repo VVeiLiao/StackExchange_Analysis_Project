@@ -109,7 +109,34 @@ def top10Words(wordDict):
     return result
 
 
+def filter10User(users_df):
+    '''
+    Takes a user data frame. Filters out the first 10 users and store the
+    results in a dictionary with key being the user ID and the value being
+    the user's reputation score
+
+    @param users_df Pandas datagrame. The datafram that contains information
+                    on users.
+
+    @return a dictionary of the first 10 users (key is user ID, value is
+            reputation)
+    ''' 
+    result = dict()
+    for i in range(10):
+        # Make user dataframe has at least 10 entries
+        if len(users_df.index) > 10:
+            # Take the first 10 Id and Reputation out
+            section = users_df.head(n=10)[["_Id", "_Reputation"]]
+            # Store ID as key and Reputation as value
+            result[section.iloc[i, 0]] = section.iloc[i, 1]
+    return result
+
+
 def q1():
+    '''
+    Performs tasks necessary to solve research question 1
+    '''
+
     # Create q1 dataframe
     q1_df = pd.DataFrame(columns=('ID', 'Tags', 'Top10Keywords',
         'Length', 'AnswerCount'))
@@ -134,15 +161,33 @@ def q1():
         # Add a new row in the q1 dataframe with the correct values
         q1_df.loc[i] = [ID, tags, top10Keywords, length, answerCount]
 
-    print(q1_df)
+    # print(q1_df)
 
 
-def q2():
-    q2_df = pd.DataFrame()
+def q2(users_df):
+    '''
+    Performs tasks necessary to solve research question 2
+    '''
+    q2_df = pd.DataFrame(columns=("UserID", "Reputation", "AnswerLength",
+        "PostLength", "CommentLength", "AnswerKeyWord", "PostKeyWord",
+        "CommentKeyword", "QuestionKeyword"))
+
+    # Sort user by highest reputation
+    sorted_df = users_df.sort_values("_Reputation", ascending=False)
+    user_rep_dict = filter10User(sorted_df)
 
 
-def q3():
-    q3_df = pd.DataFrame()
+def q3(users_df):
+    '''
+    Performs tasks necessary to solve research question 3
+    '''
+    q3_df = pd.DataFrame(columns=("UserID", "Reputation", "AnswerLength",
+        "PostLength", "CommentLength", "AnswerKeyWord", "PostKeyWord",
+        "CommentKeyword", "QuestionKeyword"))
+
+    # Sort user by lowest reputation
+    sorted_df = users_df.sort_values("_Reputation")
+    user_rep_dict = filter10User(sorted_df)
 
 
 
@@ -151,10 +196,13 @@ def main():
     # Research Question 1 Analysis DONE!
     #q1()
 
+    users_df = pd.read_csv("Users.csv")
+
     # Research Question 2 Analysis
-    q2()
+    q2(users_df)
 
     # Research Question 3 Analysis
+    q3(users_df)
 
     # !!!!!!!!!!!!!!!! PROBLEM WITH COMMENTS.CSV !!!!!!!!!!!!!!!!!
 

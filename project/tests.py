@@ -126,18 +126,29 @@ def test_top10Words():
     assert eq_str(list_correct_1, top10Words(dict_test_1))
 
 
+def test_filter10User():
+    users_df = pd.read_csv("Users.csv")
+
+    # Test sort by high
+    sorted_high_df = users_df.sort_values("_Reputation", ascending=False)
+    high_dict = filter10User(sorted_high_df)
+    #print(high_dict)
+
+    # Test sort by low
+    sorted_low_df = users_df.sort_values("_Reputation")
+    low_dict = filter10User(sorted_low_df)
+    #print(low_dict)
+
 
 # If this file, tests.py, is run as a Python script (such as by typing
 # "python tests.py" at the command shell), then run the following tests:
 if __name__ == "__main__":
-    # TODO: Uncomment these function calls as you complete each part, to test
-    # your implementation:
-
     print("**************************************")
     print("*** Testing Siu_Liao_Final_Project ***")
     print("**************************************")
     test_wordToCount()
     test_removeXMLTags()
     test_top10Words()
+    test_filter10User()
 
     print("Tests passed.")
