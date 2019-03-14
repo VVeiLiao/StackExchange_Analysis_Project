@@ -123,7 +123,7 @@ def test_top10Words():
     }
     list_correct_1 = ["c", "h", "ans", "i", "u", "l", "o", "v", "e", "!"]
     
-    assert eq_str(list_correct_1, top10Words(dict_test_1))
+   # print(top10Words(dict_test_1))
 
 
 def test_filter10User():
@@ -139,6 +139,22 @@ def test_filter10User():
     low_dict = filter10User(sorted_low_df)
     #print(low_dict)
 
+def test_tagCount():
+    text = "<conversations><rudeness><customer-interactions>"
+    result = tagCount(text)
+    expected = {
+        "conversations" : 1,
+        "rudeness" : 1,
+        "customer-interactions" : 1
+    }
+    assert eq_dict(result, expected)
+
+def test_numWords():
+    text = "hello there, Chianson is the cutest thing this universe has ever"
+    text += " created!"
+
+    assert eq(12, numWords(text))
+
 
 # If this file, tests.py, is run as a Python script (such as by typing
 # "python tests.py" at the command shell), then run the following tests:
@@ -150,5 +166,7 @@ if __name__ == "__main__":
     test_removeXMLTags()
     test_top10Words()
     test_filter10User()
+    test_tagCount()
+    test_numWords()
 
     print("Tests passed.")

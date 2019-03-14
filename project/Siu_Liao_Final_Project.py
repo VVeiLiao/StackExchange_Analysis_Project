@@ -6,6 +6,9 @@
 #
 # Created:     13/02/2019
 #-------------------------------------------------------------------------------
+import nltk
+from nltk.corpus import stopwords
+from collections import Counter
 import pandas as pd
 import operator
 
@@ -66,10 +69,11 @@ def wordToCount(text):
     @return a dictionary mapping word to word count
     '''
     wordDict = dict()
-    textList = text.split(" ")
+    textList = str(text).split(" ")
     for word in textList:
         key = word.lower()
-        wordDict[key] = wordDict.get(key, 0) + 1
+        if key != " " and key != "":
+            wordDict[key] = wordDict.get(key, 0) + 1
     return wordDict
 
 
@@ -85,7 +89,7 @@ def top10Words(wordDict):
     '''
     
     # Create list of words to exclude from final list
-    exclude = ["the", "a", "of", "or", "an", "and", "because"]
+    exclude = set(stopwords.words('english'))
 
     result = list()
     # Sort dictionary into tuples according to value
@@ -133,114 +137,179 @@ def filter10User(users_df):
 
 
 def numWords(text):
-	'''
-	Count the number of words there is in a block of string
-	'''
-	count = 0
-	for word in text:
-		count += 1
-	return count
-
-def make(post_df):
-
-	res_df = DataFrame(columns=('UserID', 'AnsCount', 'AnsAverageLen', 'Reputation'))
-
-	for i in range(len(post_df.index)):
-		if posts_df.at[i, "OwnerId"] in posts_df[ : , "AcceptedAnswerId"]:
-
-			res_df
-
-	# iterate through post, 
-	# if postID is in acceptedAnswerID list,
-	#    put OwnerUserID, Body word count in result table
-	#    update number of answer in result table
-	# if post is this aaID then get OwnerUserID and Body (count)
+    '''
+    Count the number of words there is in a block of string
+    '''
+    textList = text.split(" ")
+    return len(textList)
 
 
-def q1():
+def tagCount(text):
+    textList = list(str(text))
+    # take the words between the "<>"
+    wordString = ""
+    j = 0
+    while j < len(textList):
+        if textList[j] == "<":
+            # pop out the first "<"
+            textList.pop(j)
+            while textList[j] != ">":
+                wordString += textList.pop(j)
+            textList.pop(j)
+            wordString += " "
+        else:
+            j += 1
+
+    tag_dict = wordToCount(wordString)
+    return tag_dict
+
+def q1(posts_df):
     '''
     Performs tasks necessary to solve research question 1
     '''
 
-    # Create q1 dataframe
-    q1_df = pd.DataFrame(columns=('ID', 'Tags', 'Top10Keywords',
-        'Length', 'AnswerCount'))
-
-    # read in the CSV file to pandas dataframe. The CSV file must be coded as
-    # UTF-8.
-    posts_df = pd.read_csv("Posts.csv")
-    posts_df = removeBodyXMLTags(posts_df)
+    # Create variables
+    ans_tag = dict()
+    ans_body = dict()
+    ans_title = dict()
+    ans_len = 0
+    ans_count = 0
+    
+    noAns_tag = dict()
+    noAns_body = dict()
+    noAns_title = dict()
+    noAns_len = 0
+    noAns_count = 0
 
     # Fill in PostID, Length, AnswerCount of each row
     for i in range(len(posts_df.index)):
-        # obtain body of the post
         body = posts_df.at[i, "Body"]
 
         # Obain each column info
-        ID = posts_df.at[i, "Id"]
-        tags = posts_df.at[i, "Tags"]
-        top10Keywords = top10Words(wordToCount(body))
-        length = len(str(body))
-        answerCount = posts_df.at[i, "AnswerCount"]
+        tags = tagCount(posts_df.at[i, "Tags"])
+        top10Body = wordToCount(body)
+        length = numWords(str(body))
+        title = wordToCount(posts_df.at[i, "Title"])
 
-        # Add a new row in the q1 dataframe with the correct values
-        q1_df.loc[i] = [ID, tags, top10Keywords, length, answerCount]
+        # Add a new row in the ans or no_ans dataframe with the correct values
+        if pd.isnull(posts_df.loc[i, "AcceptedAnswerId"]):
+            # There is no accepted answer
+            noAns_tag = Counter(noAns_tag) + Counter(tags)
+            noAns_body = Counter(noAns_body) + Counter(top10Body)
+            noAns_title = Counter(noAns_title) + Counter(title)
+            noAns_len += length
+            noAns_count += 1
+        else:
+            ans_tag = Counter(ans_tag) + Counter(tags)
+            ans_body = Counter(ans_body) + Counter(top10Body)
+            ans_title = Counter(ans_title) + Counter(title)
+            ans_len += length
+            ans_count += 1
 
-    # print(q1_df)
+    
+    print("noAns_tag:", top10Words(noAns_tag))
+    print("noAns_body:", top10Words(noAns_body))
+    print("noAns_title:", top10Words(noAns_title))
+    print("noAns Average Length:", float(noAns_len/noAns_count))
+
+    print()
+
+    print("ans_tag:", top10Words(ans_tag))
+    print("ans_body:", top10Words(ans_body))
+    print("ans_title:", top10Words(ans_title))
+    print("ans Average Length:", float(ans_len/ans_count))
 
 
-def q2(users_df):
+def q2(posts_df, users_df):
     '''
     Performs tasks necessary to solve research question 2
     '''
-    q2_df = pd.DataFrame(columns=("UserID", "Reputation", "AnswerLength",
-        "PostLength", "CommentLength", "AnswerKeyWord", "PostKeyWord",
-        "CommentKeyword", "QuestionKeyword"))
+    q2_df = pd.DataFrame(columns=("UserID", "Reputation", "AnswerCount", 
+        "AverageBodyLength"))
 
-    # Sort user by highest reputation
-    sorted_df = users_df.sort_values("_Reputation", ascending=False)
-    user_rep_dict = filter10User(sorted_df)
+    # Get UserID and Reputation first
+    q2_df.loc[ : , "UserID"] = users_df.loc[ : , "_Id"]
+    q2_df.loc[ : , "Reputation"] = users_df.loc[ : , "_Reputation"]
+
+    # id to length and count dictionary
+    id_lenCount = dict()
+
+    # Find which posts are answers
+    ans_set = set()
+    for i in range(len(posts_df.index)):
+        # this post is an answer
+        if int(posts_df.at[i, "PostTypeId"]) == 2:
+            ans_set.add(posts_df.at[i, "Id"])
+
+    # Fill in answer count and accumulate body length for now
+    for i in range(len(posts_df.index)):
+        userID = posts_df.at[i, "OwnerUserId"]
+        # add only if userID exist and if the post is an answer
+        if userID in q2_df.loc[ : , "UserID"] and posts_df.at[i, "Id"] in ans_set:
+            if userID not in id_lenCount.keys():
+                # list first element is count, second is accumulated body len
+                id_lenCount[userID] = list()
+                id_lenCount[userID].append(0)
+                id_lenCount[userID].append(numWords(str(posts_df.at[i, "Body"])))
+            else:
+                id_lenCount[userID][0] += 1
+                id_lenCount[userID][1] += numWords(str(posts_df.at[i, "Body"]))
+
+    # Now fill average length and answer count back into the main table
+    for i in range(len(q2_df.index)):
+        userID = q2_df.at[i, "UserID"]
+        if userID in id_lenCount.keys():
+            answerCount = id_lenCount[userID][0]
+            q2_df.at[i, "AnswerCount"] = answerCount
+            if answerCount != 0:
+                q2_df.at[i, "AverageBodyLength"] = id_lenCount[userID][1]/answerCount
+
+    q2_df = q2_df.dropna()
+
+    q2_df.to_excel("Q2_Result.xlsx")
 
 
 def q3(users_df):
     '''
     Performs tasks necessary to solve research question 3
     '''
-    q3_df = pd.DataFrame(columns=("UserID", "Reputation", "AnswerLength",
-        "PostLength", "CommentLength", "AnswerKeyWord", "PostKeyWord",
-        "CommentKeyword", "QuestionKeyword"))
+    q3_df = pd.DataFrame(columns=("UserID", "Reputation", "UpVotes",
+        "DownVotes"))
 
-    # Sort user by lowest reputation
-    sorted_df = users_df.sort_values("_Reputation")
-    user_rep_dict = filter10User(sorted_df)
+    # extract the userID, reputation, upvotes, and downvotes
+    q3_df.loc[ : , "UserID"] = users_df.loc[ : , "_Id"]
+    q3_df.loc[ : , "Reputation"] = users_df.loc[ : , "_Reputation"]
+    q3_df.loc[ : , "UpVotes"] = users_df.loc[ : , "_UpVotes"]
+    q3_df.loc[ : , "DownVotes"] = users_df.loc[ : , "_DownVotes"]
 
+    # remove rows with any zeros
+    q3_df = q3_df[(q3_df != 0).all(1)]
 
+    #print(q3_df)
+    q3_df.to_excel("Q3_Result.xlsx")
 
 def main():
+    # read in the CSV file to pandas dataframe. The CSV file must be coded as
+    # UTF-8.
+    posts_df = pd.read_csv("Posts2018.csv")
+    posts_df = removeBodyXMLTags(posts_df)
 
-    # Research Question 1 Analysis DONE!
-    #q1()
+    # Research Question 1 Analysis DONE! (fix stopword list)
+    q1(posts_df)
 
     users_df = pd.read_csv("Users.csv")
 
-    # Research Question 2 Analysis
-    #q2(users_df)
+    # Research Question 2 Analysis DONE! (accepted answer post only?)
+    #q2(posts_df, users_df)
 
     # Research Question 3 Analysis
     #q3(users_df)
 
-    # !!!!!!!!!!!!!!!! PROBLEM WITH COMMENTS.CSV !!!!!!!!!!!!!!!!!
-
   #  df = pd.read_csv("Comments.csv")
    # print(df.loc[0, :])
-    # tags_df = pd.read_csv("Tags.csv")
-    #print(tags_df)
 
-
-    # test num_words()
 
 # If this file is run as a Python script (such as by typing
 # "python tests.py" at the command shell), then run the following:
 if __name__ == "__main__":
     main()
-
