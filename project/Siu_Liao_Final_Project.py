@@ -132,6 +132,31 @@ def filter10User(users_df):
     return result
 
 
+def numWords(text):
+	'''
+	Count the number of words there is in a block of string
+	'''
+	count = 0
+	for word in text:
+		count += 1
+	return count
+
+def make(post_df):
+
+	res_df = DataFrame(columns=('UserID', 'AnsCount', 'AnsAverageLen', 'Reputation'))
+
+	for i in range(len(post_df.index)):
+		if posts_df.at[i, "OwnerId"] in posts_df[ : , "AcceptedAnswerId"]:
+
+			res_df
+
+	# iterate through post, 
+	# if postID is in acceptedAnswerID list,
+	#    put OwnerUserID, Body word count in result table
+	#    update number of answer in result table
+	# if post is this aaID then get OwnerUserID and Body (count)
+
+
 def q1():
     '''
     Performs tasks necessary to solve research question 1
@@ -199,17 +224,20 @@ def main():
     users_df = pd.read_csv("Users.csv")
 
     # Research Question 2 Analysis
-    q2(users_df)
+    #q2(users_df)
 
     # Research Question 3 Analysis
-    q3(users_df)
+    #q3(users_df)
 
     # !!!!!!!!!!!!!!!! PROBLEM WITH COMMENTS.CSV !!!!!!!!!!!!!!!!!
 
-    #df = pd.read_csv("Comments.csv")
-    #print(df.loc[0, :])
+  #  df = pd.read_csv("Comments.csv")
+   # print(df.loc[0, :])
     # tags_df = pd.read_csv("Tags.csv")
     #print(tags_df)
+
+
+    # test num_words()
 
 # If this file is run as a Python script (such as by typing
 # "python tests.py" at the command shell), then run the following:
